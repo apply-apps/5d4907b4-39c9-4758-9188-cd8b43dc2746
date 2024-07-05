@@ -1,146 +1,88 @@
 // Filename: index.js
 // Combined code from all files
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { GameEngine } from 'react-native-game-engine';
-import Matter from 'matter-js';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { SafeAreaView, StyleSheet, View, Text, TouchableOpacity, FlatList, ScrollView } from 'react-native';
 
-const WINDOW_WIDTH = Dimensions.get('window').width;
-const WINDOW_HEIGHT = Dimensions.get('window').height;
-const BOX_SIZE = 20;
-const INIT_SNAKE_SPEED = 100;
-const INIT_SNAKE_SIZE = 5;
+const tales = [
+    { id: '1', title: 'Cinderella', content: 'Once upon a time, there was a kind girl named Cinderella...' },
+    { id: '2', title: 'Snow White', content: 'Once upon a time, there was a beautiful princess named Snow White...' },
+    { id: '3', title: 'Little Red Riding Hood', content: 'Once upon a time, there was a little girl who always wore a red riding hood...' },
+];
 
-const Snake = (props) => {
-    const { size, position } = props;
-
+const HomeScreen = ({ navigation }) => {
     return (
-        <View
-            style={{
-                width: size[0],
-                height: size[1],
-                backgroundColor: 'green',
-                position: 'absolute',
-                left: position[0],
-                top: position[1],
-            }}
-        />
+        <SafeAreaView style={styles.container}>
+            <Text style={styles.title}>Fairy Tales</Text>
+            <FlatList
+                data={tales}
+                renderItem={({ item }) => (
+                    <TouchableOpacity 
+                        style={styles.taleItem} 
+                        onPress={() => navigation.navigate('Tale', { title: item.title, content: item.content })}
+                    >
+                        <Text style={styles.taleTitle}>{item.title}</Text>
+                    </TouchableOpacity>
+                )}
+                keyExtractor={item => item.id}
+            />
+        </SafeAreaView>
     );
 };
 
-const Food = (props) => {
-    const { position, size } = props;
-
-    return (
-        <View
-            style={{
-                width: size[0],
-                height: size[1],
-                backgroundColor: 'red',
-                position: 'absolute',
-                left: position[0],
-                top: position[1],
-            }}
-        />
-    );
-};
-
-const GameLoop = (entities, { touches, dispatch, events }) => {
-    let head = entities.head;
-    let food = entities.food;
-    let tail = entities.tail;
-
-    // Simple move logic here (e.g., arrow keys, touch gestures)
-    // Detect collision with food to grow snake size and increment score
-    // Detect collision with walls or self to trigger game over
-
-    return entities;
-};
-
-export default function App() {
-    const [running, setRunning] = useState(false);
-    const [score, setScore] = useState(0);
-    const [entities, setEntities] = useState({});
-    const [gameEngine, setGameEngine] = useState(null);
-
-    const resetGame = useCallback(() => {
-        setRunning(true);
-        gameEngine.swap({
-            head: { position: [25, 25], size: [BOX_SIZE, BOX_SIZE], renderer: <Snake /> },
-            food: { position: getRandomPosition(), size: [BOX_SIZE, BOX_SIZE], renderer: <Food /> },
-            tail: [],
-            speed: INIT_SNAKE_SPEED,
-            score: 0,
-        });
-        setScore(0);
-    }, [gameEngine]);
-
-    useEffect(() => {
-        if (gameEngine) {
-            resetGame();
-        }
-    }, [gameEngine, resetGame]);
-
-    const getRandomPosition = () => {
-        const x = Math.floor(Math.random() * (WINDOW_WIDTH / BOX_SIZE));
-        const y = Math.floor(Math.random() * (WINDOW_HEIGHT / BOX_SIZE));
-        return [x * BOX_SIZE, y * BOX_SIZE];
-    };
-
-    const onEvent = (e) => {
-        if (e.type === "game-over") {
-            setRunning(false);
-            setScore(0);
-        } else if (e.type === "score") {
-            setScore(e.score);
-        }
-    };
+const TaleScreen = ({ route }) => {
+    const { title, content } = route.params;
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.score}>Score: {score}</Text>
-            <GameEngine
-                ref={(ref) => setGameEngine(ref)}
-                style={styles.gameContainer}
-                systems={[GameLoop]}
-                entities={entities}
-                running={running}
-                onEvent={onEvent}
-            />
-            {!running && (
-                <TouchableOpacity style={styles.startButton} onPress={resetGame}>
-                    <Text style={styles.startButtonText}>Start Game</Text>
-                </TouchableOpacity>
-            )}
+            <ScrollView>
+                <Text style={styles.title}>{title}</Text>
+                <Text style={styles.content}>{content}</Text>
+            </ScrollView>
         </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFF',
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingTop: 20,
     },
-    score: {
-        fontSize: 24,
+    title: {
+        fontSize: 28,
         fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
         marginBottom: 20,
     },
-    gameContainer: {
-        width: WINDOW_WIDTH,
-        height: WINDOW_HEIGHT,
-        backgroundColor: '#FAFAFA',
+    taleItem: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEE',
     },
-    startButton: {
-        backgroundColor: '#0A84FF',
-        padding: 10,
-        borderRadius: 5,
-    },
-    startButtonText: {
-        color: '#FFF',
+    taleTitle: {
         fontSize: 18,
+        color: '#333',
+    },
+    content: {
+        fontSize: 16,
+        color: '#666',
+        paddingHorizontal: 15,
     },
 });
+
+const Stack = createStackNavigator();
+
+export default function App() {
+    return (
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="Home">
+                <Stack.Screen name="Home" component={HomeScreen} />
+                <Stack.Screen name="Tale" component={TaleScreen} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+}
